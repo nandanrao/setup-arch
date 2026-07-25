@@ -1,0 +1,20 @@
+partial modifier_keys
+xkb_symbols "fn_lwin" {
+    replace key <I151> { [ Super_R, Super_R ] };
+    modifier_map Mod4 {  <I151>, <PRSC> };
+};
+
+partial modifier_keys 
+xkb_symbols "rshift_alt" {
+    replace key <RTSH> { [ Alt_R, Meta_R ] };
+    modifier_map Mod1 { <RTSH> };
+};
+
+partial modifier_keys
+xkb_symbols "print_lwin" {
+    replace key <PRSC> { [ Super_R, Super_R ] };
+    modifier_map Mod4 { <PRSC>, <I151> };
+};
+
+
+

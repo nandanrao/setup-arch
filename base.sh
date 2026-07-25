@@ -1,18 +1,27 @@
 pacman -Syu --noconfirm \
        git \
        sway \
+       swayidle \
+       swaylock \
+       xorg-server \
+       xorg-xinit \
+       xorg-xev \
+       xorg-randr \
+       i3-wm \
+       i3status \
        dialog \
-       wifi-menu \
        base-devel \
        which \
        sudo \
        man \
        bc \
        tree \
+       fd \
+       ripgrep \
        htop \
        wget \
        pango \
-       dsnutils \
+       dnsutils \
        usbutils \
        ntp \
        iptables-nft \
@@ -27,11 +36,14 @@ pacman -Syu --noconfirm \
        light \
        bluez-utils \
        transmission-cli \
+       acpi \
+       firefox \
        yq \
        go \
        python \
        python-pip \
        python-virtualenv \
+       gcc-fortran \
        r \
        ghc \
        stack \
@@ -39,12 +51,13 @@ pacman -Syu --noconfirm \
        hub \
        gist \
        kubectl \
-       texlive-most \
+       helm \
+       texlive-bin \
        biber \
        gdal \
-       pandoc \
        librdkafka \
        docker \
+       docker-compose \
        flatpak \
        borg \
        openfortivpn \
@@ -60,5 +73,18 @@ pacman -Syu --noconfirm \
        obs-studio \
        ppp \
        pdftk \
+       mupdf \
        qgis \
-       python-gdal
+       python-gdal \
+       xdg-user-dirs \
+       android-tools \
+       xdg-desktop-portal-wlr \
+       luajit \
+       bluetui \
+       rust-analyzer \
+       bemenu \
+       bemenu-wayland \
+       swaybg \
+       jq \
+       playerctl \
+       keyd
