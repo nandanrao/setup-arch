@@ -1,0 +1,9 @@
+[Unit]
+Description=Report failure of %i to nandan's sway session
+# %i is the failed unit's name, passed by OnFailure=borg-failure-notify@%n.service.
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/borg-failure-notify %i
+# The alert itself is spawned into user@1000.service by the helper, so nothing
+# long-lived lives in this cgroup and the unit is free to exit immediately.

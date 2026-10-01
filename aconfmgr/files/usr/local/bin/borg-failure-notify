@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# Root-side half of the borg failure notifier.
+#
+# Installed to /usr/local/bin/borg-failure-notify and invoked by
+# borg-failure-notify@.service, which borg.service pulls in via
+#     OnFailure=borg-failure-notify@%n.service
+# (a drop-in at /etc/systemd/system/borg.service.d/50-onfailure.conf).
+#
+# NOTE ON EXIT CODES: borg.service sets SuccessExitStatus=1, so a borg run that
+# "completed with warnings" (rc 1) is a *successful* unit and systemd never
+# fires OnFailure=. Only rc >= 2, a signal, or a timeout reaches this script.
+# Nothing here needs to re-check that.
+#
+# Two things happen, in this order, and the first one always happens:
+#   1. Append a record to $LOGFILE. This is the durable channel -- it works
+#      whether or not anyone is logged in, and survives reboots.
+#   2. Best-effort live alert into nandan's sway session, if one exists.
+#
+# Step 2 is best-effort by design: if it fails, the record from step 1 is
+# replayed by borg-failure-replay.sh the next time sway starts.
+#
+# Usage: borg-failure-notify <failed-unit-name>
+
+set -euo pipefail
+
+TARGET_USER=nandan
+TARGET_UID=1000
+LOGFILE=/var/log/borg-failures.log
+REPLAY=/home/nandan/scripts/borg-failure-replay.sh
+
+UNIT="${1:-borg.service}"
+XRD="/run/user/${TARGET_UID}"
+
+EPOCH=$(date +%s)
+WHEN=$(date -Iseconds)
+
+# ---------------------------------------------------------------- 1. durable
+RESULT=$(systemctl show "$UNIT" -p Result --value 2>/dev/null || echo unknown)
+STATUS=$(systemctl show "$UNIT" -p ExecMainStatus --value 2>/dev/null || echo '?')
+
+# Tab-separated, one line per failure. borg-failure-replay.sh parses field 1.
+printf '%s\t%s\t%s\tresult=%s\texit=%s\n' \
+    "$EPOCH" "$WHEN" "$UNIT" "$RESULT" "$STATUS" >> "$LOGFILE"
+chmod 0644 "$LOGFILE" 2>/dev/null || true
+
+# Also put it in the journal, so `journalctl -u borg-failure-notify@*` shows it.
+echo "borg failure recorded: unit=$UNIT result=$RESULT exit=$STATUS" >&2
+
+# ------------------------------------------------------------ 2. live alert
+# Bail out quietly (leaving the log record for replay) if there is no graphical
+# session to draw into. Each check below is a real failure mode:
+
+#   a. nandan not logged in at all. Linger=no, so user@1000.service is not
+#      running either and there is nothing to hand the job to.
+state=$(loginctl show-user "$TARGET_USER" -p State --value 2>/dev/null || true)
+if [ "$state" != active ]; then
+    echo "no active login for $TARGET_USER (state=${state:-none}); left for replay" >&2
+    exit 0
+fi
+
+#   b. No user bus -> systemd-run --user has nothing to talk to.
+if [ ! -S "$XRD/bus" ]; then
+    echo "no user bus at $XRD/bus; left for replay" >&2
+    exit 0
+fi
+
+#   c. Logged in on a tty but sway is not running. sway's config does
+#      `systemctl --user import-environment WAYLAND_DISPLAY`, so the presence
+#      of WAYLAND_DISPLAY in the *user manager's* environment is the honest
+#      test for "there is a compositor to draw into". Ask the user manager,
+#      as the user -- root has no business guessing the socket name.
+WD=$(runuser -u "$TARGET_USER" -- env \
+        XDG_RUNTIME_DIR="$XRD" \
+        DBUS_SESSION_BUS_ADDRESS="unix:path=$XRD/bus" \
+        systemctl --user show-environment 2>/dev/null \
+     | sed -n 's/^WAYLAND_DISPLAY=//p' | head -n1)
+
+if [ -z "$WD" ] || [ ! -S "$XRD/$WD" ]; then
+    echo "no wayland display for $TARGET_USER (WAYLAND_DISPLAY='${WD:-unset}'); left for replay" >&2
+    exit 0
+fi
+
+# Hand off to the user manager rather than forking swaynag ourselves.
+#
+# This is the important bit. swaynag is long-lived -- it stays on screen until
+# dismissed. If root just did `runuser -u nandan -- swaynag &`, that process
+# would live in borg-failure-notify@.service's cgroup, and systemd would kill
+# it the instant this oneshot unit exited. Routing through `systemd-run --user`
+# makes nandan's own user manager fork swaynag, so it lands in
+# user@1000.service's cgroup and outlives us.
+#
+# `runuser` + explicit XDG_RUNTIME_DIR/DBUS_SESSION_BUS_ADDRESS is used in
+# preference to `systemd-run --machine=nandan@ --user`: same destination, but
+# it does not route through systemd-machined, and the environment it depends
+# on is written out here instead of being implied.
+if runuser -u "$TARGET_USER" -- env \
+        XDG_RUNTIME_DIR="$XRD" \
+        DBUS_SESSION_BUS_ADDRESS="unix:path=$XRD/bus" \
+        systemd-run --user --quiet --collect \
+            --unit="borg-failure-nag-${EPOCH}" \
+            --description="borg backup failure alert" \
+            --setenv=XDG_RUNTIME_DIR="$XRD" \
+            --setenv=WAYLAND_DISPLAY="$WD" \
+            "$REPLAY" --show "$EPOCH"
+then
+    echo "live alert dispatched into ${TARGET_USER}'s session" >&2
+else
+    echo "live alert dispatch failed; left for replay" >&2
+fi
+
+exit 0

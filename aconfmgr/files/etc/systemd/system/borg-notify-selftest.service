@@ -1,0 +1,7 @@
+[Unit]
+Description=Deliberately-failing unit, to test the borg failure notifier
+OnFailure=borg-failure-notify@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/false

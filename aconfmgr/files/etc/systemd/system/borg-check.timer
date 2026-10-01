@@ -1,0 +1,12 @@
+[Unit]
+Description=Run borg repository check monthly
+
+[Timer]
+# 1st of the month at 04:00 -- deliberately not 00:00, which would collide with
+# the nightly borg.service backup.
+OnCalendar=*-*-01 04:00:00
+Persistent=true
+RandomizedDelaySec=30m
+
+[Install]
+WantedBy=timers.target

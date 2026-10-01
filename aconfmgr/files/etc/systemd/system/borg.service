@@ -1,0 +1,33 @@
+[Unit]
+Description=borg backup
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# borg exit 1 = "completed with warnings" (e.g. file changed while reading) --
+# treat as success so only real errors (rc >= 2) mark the unit failed. Genuine
+# failures should be surfaced via OnFailure=, not by making this unit noisy.
+SuccessExitStatus=1
+
+# The first run as root has a cold files-cache and re-reads every file, so it
+# takes far longer than the steady-state few minutes. Do not time it out.
+TimeoutStartSec=infinity
+
+# Lower CPU and I/O priority.
+Nice=19
+CPUSchedulingPolicy=batch
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+IOWeight=100
+
+Restart=no
+# Prevent rate limiting of borg log events.
+LogRateLimitIntervalSec=0
+
+# Delay start to prevent backups running during boot.
+ExecStartPre=/usr/bin/sleep 1m
+ExecStart=/usr/bin/systemd-inhibit --who="borg backup" --why="Prevent interrupting scheduled backup" /usr/local/sbin/borg-backup.sh
+
+[Install]
+WantedBy=multi-user.target

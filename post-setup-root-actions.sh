@@ -38,3 +38,17 @@ sudo cp user-share-X11-xkb/symbols/nandan /usr/share/X11/xkb/symbols/
 # `sudo systemctl stop keyd` reverts all of it.
 sudo install -Dm644 etc-keyd/default.conf /etc/keyd/default.conf
 sudo systemctl enable --now keyd
+
+# Hibernation. Lid/idle go to suspend-then-hibernate and UPower hibernates
+# instead of powering off at critical battery.
+#
+# These configs are necessary but NOT sufficient: they are inert unless the
+# swap LV is >= 2x RAM. systemd checks Active(anon) against free swap on the
+# one area matching /sys/power/resume, and when that fails BOTH paths degrade
+# silently -- logind drops to plain suspend, UPower falls through
+# HybridSleep -> Hibernate -> PowerOff. See initial-crypted-swap.sh (sizing)
+# and hibernation.md (the incident this came from).
+sudo install -Dm644 etc-systemd/logind.conf.d/10-hibernate.conf /etc/systemd/logind.conf.d/10-hibernate.conf
+sudo install -Dm644 etc-systemd/sleep.conf.d/10-hibernate.conf /etc/systemd/sleep.conf.d/10-hibernate.conf
+sudo install -Dm644 UPower.conf /etc/UPower/UPower.conf
+# Takes effect on next boot. Restarting systemd-logind would end the session.

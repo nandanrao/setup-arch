@@ -1,0 +1,27 @@
+[Unit]
+Description=borg repository check
+Wants=network-online.target
+After=network-online.target
+
+# OnFailure belongs in [Unit]. systemd silently ignores it in [Service] --
+# it only says "Unknown key" via systemd-analyze verify, and the unit still
+# loads and runs, so a misplaced OnFailure fails open and alerts nothing.
+OnFailure=borg-failure-notify@%n.service
+
+[Service]
+Type=oneshot
+
+# NOTE: unlike borg.service, SuccessExitStatus=1 is deliberately NOT set here.
+# For a backup, rc 1 means "a file changed while reading" -- benign. For an
+# integrity check, rc 1 means the check found something worth looking at, so it
+# should surface as a failure and raise an alert.
+
+TimeoutStartSec=infinity
+Nice=19
+CPUSchedulingPolicy=batch
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+Restart=no
+LogRateLimitIntervalSec=0
+
+ExecStart=/usr/bin/systemd-inhibit --who="borg check" --why="Prevent interrupting integrity check" /usr/local/sbin/borg-check.sh
