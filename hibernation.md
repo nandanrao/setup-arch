@@ -51,7 +51,7 @@ The `Detected ... swap for hibernation:` line prints `Active(anon)`, and the
 
 ## Fix on a NEW machine
 
-Size the swap LV at >= 2x RAM at install time. See `initial-crypted-swap.sh`.
+Size the swap LV at >= 2x RAM at install time. `install.sh` does this (see README step 1).
 `resume=/dev/Group/swap` then stays correct and nothing else is needed.
 
 ## Remediation on an EXISTING machine
