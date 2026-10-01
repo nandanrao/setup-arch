@@ -19,7 +19,10 @@ Shortcut used below: `acm` = `aconfmgr -c ~/Documents/setup-arch/aconfmgr`
    ```
 3. Check you can log in to borgbase.com.
 4. Have ready: borg passphrase, Wi-Fi password, a new disk passphrase.
-5. Write the Arch ISO to a USB stick: `sudo dd if=archlinux.iso of=/dev/sdX bs=4M status=progress`
+5. Make the USB stick (Arch installer + a copy of this repo). Details in `make-usb.sh`:
+   ```
+   ./make-usb.sh ~/Downloads/archlinux-YYYY.MM.DD-x86_64.iso /dev/sdX
+   ```
 
 
 ## 1. Install Arch
@@ -28,57 +31,13 @@ In the BIOS (F1 at boot): turn **off** Secure Boot. Boot the USB stick.
 
 Wi-Fi: `iwctl station wlan0 connect "NETWORK"`
 
-Check the disk name with `lsblk` (below assumes `nvme0n1`). **This wipes it.**
+Find the laptop's disk with `lsblk` (probably `nvme0n1`), then run the installer
+from the stick. It asks you to type YES before wiping, then for the disk passphrase
+and the two user passwords. Read `install.sh` to see exactly what it does.
 
 ```
-sgdisk --zap-all /dev/nvme0n1
-sgdisk -n1:0:+1G -t1:ef00 -n2:0:0 -t2:8309 /dev/nvme0n1
-mkfs.fat -F32 /dev/nvme0n1p1
-
-cryptsetup luksFormat /dev/nvme0n1p2
-cryptsetup open /dev/nvme0n1p2 root
-pvcreate /dev/mapper/root
-vgcreate Group /dev/mapper/root
-lvcreate -L 64G Group -n swap        # 2x RAM, or hibernation fails. See hibernation.md
-lvcreate -l 100%FREE Group -n root
-mkfs.ext4 /dev/Group/root
-mkswap /dev/Group/swap
-
-mount /dev/Group/root /mnt
-mount --mkdir /dev/nvme0n1p1 /mnt/boot
-swapon /dev/Group/swap
-
-pacstrap -K /mnt base base-devel linux linux-firmware intel-ucode lvm2 \
-    networkmanager iwd efibootmgr sudo nano zsh git
-genfstab -U /mnt >> /mnt/etc/fstab
-arch-chroot /mnt
-```
-
-Inside the new system:
-
-```
-ln -sf /usr/share/zoneinfo/America/New_York /etc/localtime
-hwclock --systohc
-echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen
-echo 'LANG=en_US.UTF-8' > /etc/locale.conf
-echo nandan > /etc/hostname
-
-sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 resume fsck filesystems)/' /etc/mkinitcpio.conf
-mkinitcpio -P
-
-UUID=$(blkid -s UUID -o value /dev/nvme0n1p2)
-efibootmgr --create --disk /dev/nvme0n1 --part 1 --label "Arch Linux" --loader '\vmlinuz-linux' \
-  --unicode "cryptdevice=UUID=$UUID:root:allow-discards root=/dev/Group/root resume=/dev/Group/swap rw initrd=\intel-ucode.img initrd=\initramfs-linux.img"
-
-passwd                                   # root password
-useradd -m -G wheel -s /bin/zsh nandan
-passwd nandan
-EDITOR=nano visudo                       # uncomment: %wheel ALL=(ALL) ALL
-systemctl enable NetworkManager
-
-exit
-umount -R /mnt
-reboot
+bash /run/archiso/bootmnt/setup-arch/install.sh /dev/nvme0n1
+reboot                                   # and remove the stick
 ```
 
 Log in as **root** on the text console (not nandan: we're about to overwrite
