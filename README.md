@@ -9,7 +9,13 @@ Shortcut used below: `acm` = `aconfmgr -c ~/Documents/setup-arch/aconfmgr`
 (the alias is in `~/.zshrc`, so it works once home is restored).
 
 
-## 0. Before you start (on the old laptop)
+## 0. Before you start
+
+Keep these somewhere you can open **from your phone** (a password manager whose
+vault is not only on this laptop): the borg passphrase, your BorgBase login and
+2FA, the Wi-Fi password. You'll also choose a new disk passphrase during install.
+
+On the old laptop, if you still have it:
 
 1. `acm save` says "configuration unchanged". Commit and push.
 2. Run a fresh backup and wait for "finished successfully":
@@ -17,54 +23,104 @@ Shortcut used below: `acm` = `aconfmgr -c ~/Documents/setup-arch/aconfmgr`
    sudo systemctl start borg.service
    journalctl -fu borg.service
    ```
-3. Check you can log in to borgbase.com.
-4. Have ready: borg passphrase, Wi-Fi password, a new disk passphrase.
-5. Make the USB stick (Arch installer + a copy of this repo). Details in `make-usb.sh`:
-   ```
-   ./make-usb.sh ~/Downloads/archlinux-YYYY.MM.DD-x86_64.iso /dev/sdX
-   ```
+
+Make the USB stick. It is just the plain Arch installer; this repo comes from
+GitHub later. Use a spare stick: it gets erased.
+
+1. Download `archlinux-YYYY.MM.DD-x86_64.iso` from https://archlinux.org/download/
+2. Check its SHA256 against the one on that page.
+   Windows (PowerShell, in the download folder): `Get-FileHash .\archlinux-*.iso`
+   Linux: `sha256sum archlinux-*.iso`
+3. Write it to the stick.
+   Windows: [Rufus](https://rufus.ie), GPT + UEFI, and pick **DD Image mode** when asked.
+   Linux: `sudo dd if=archlinux-*.iso of=/dev/sdX bs=4M status=progress oflag=sync`
 
 
 ## 1. Install Arch
 
-In the BIOS (F1 at boot): turn **off** Secure Boot. Boot the USB stick.
-
-Wi-Fi: `iwctl station wlan0 connect "NETWORK"`
-
-Find the laptop's disk with `lsblk` (probably `nvme0n1`), then run the installer
-from the stick. It asks you to type YES before wiping, then for the disk passphrase
-and the two user passwords. Read `install.sh` to see exactly what it does.
-
-```
-bash /run/archiso/bootmnt/setup-arch/install.sh /dev/nvme0n1
-reboot                                   # and remove the stick
-```
-
-Log in as **root** on the text console (not nandan: we're about to overwrite
-nandan's home). Wi-Fi: `nmcli device wifi connect "NETWORK" password "PASSWORD"`
+1. If the laptop has Windows on it: shut down with **Shift + Shut down**
+   (a plain shutdown only hibernates and can upset the installer).
+2. In the BIOS (F1 at boot): turn **off** Secure Boot.
+3. Boot the stick (F12 at boot → the USB drive). You get a `root@archiso` prompt.
+4. Check you booted in UEFI mode: `ls /sys/firmware/efi` must list files.
+5. Wi-Fi, then check it works:
+   ```
+   iwctl station wlan0 connect "NETWORK"
+   ping -c3 archlinux.org
+   ```
+6. Get this repo (git isn't on the installer, so install it first) and run the
+   installer. Find the disk with `lsblk` (probably `nvme0n1`). It asks you to type
+   YES before wiping, then for the disk passphrase and the two user passwords.
+   Read `install.sh` to see exactly what it does.
+   ```
+   pacman -Sy git
+   git clone https://github.com/nandanrao/setup-arch
+   bash setup-arch/install.sh /dev/nvme0n1
+   reboot                                   # and remove the stick
+   ```
+7. Log in as **root** on the text console (not nandan: we're about to overwrite
+   nandan's home). Wi-Fi: `nmcli device wifi connect "NETWORK" password "PASSWORD"`
 
 
 ## 2. Restore home from borg
 
-Make a key for this laptop and add it in BorgBase
-(Repositories → the repo → Edit → Access → add key):
+### Give this laptop access to BorgBase
+
+Your usual borg SSH key is inside the backup, so make a temporary one. It goes in
+`/root`, because `/home/nandan` is about to be overwritten. Press Enter at both
+passphrase prompts (no passphrase).
 
 ```
 pacman -S borg openssh
 ssh-keygen -t ed25519 -f /root/.ssh/borg_restore
-cat /root/.ssh/borg_restore.pub          # paste this into BorgBase
 ```
 
-Then restore. This takes hours; leave it running.
+Now get that key into BorgBase. There is no desktop yet, so either:
+
+- **Phone:** `pacman -S qrencode && qrencode -t ansiutf8 < /root/.ssh/borg_restore.pub`,
+  scan the QR code, and paste the text into BorgBase on the phone.
+- **Firefox on this laptop**, full screen with the key already on the clipboard:
+  ```
+  pacman -S cage firefox wl-clipboard
+  cage -- sh -c 'wl-copy < /root/.ssh/borg_restore.pub; firefox'
+  ```
+  Ctrl+V pastes it. Ctrl+Q quits back to the console.
+  (No clipboard? Open `view-source:file:///root/.ssh/borg_restore.pub` in a tab
+  and copy from there.)
+
+In BorgBase it takes **two** steps:
+
+1. Add the key (Account → SSH Keys → Add Key). It's one line starting `ssh-ed25519`.
+2. Give it access to the repo: Repositories → the repo → Edit → **Access** →
+   select the new key under full or append-only access → Save.
+   **Skipping this gives "Permission denied (publickey)".**
+
+`acm apply` in step 3 removes cage, qrencode and wl-clipboard again if they
+aren't in the config.
+
+### Restore
+
+Everything below runs in the same console. If you open a new one (or leave and
+re-enter cage), run the three setup lines again.
 
 ```
 export BORG_REPO=ssh://faan3tku@faan3tku.repo.borgbase.com/./repo
 export BORG_RSH="ssh -i /root/.ssh/borg_restore"
-borg list                                # pick the newest archive name
-cd / && borg extract --progress ::ARCHIVE home/nandan
+read -rs BORG_PASSPHRASE && export BORG_PASSPHRASE   # type the borg passphrase, Enter (nothing shows)
+
+borg list                                # first time: answer "yes" to "authenticity of host"
+```
+
+`borg list` shows one line per backup ("archive"). The name is the first column,
+e.g. `2026-10-03T00:59:49`, and the newest is at the bottom. Restore the newest.
+This takes hours; leave it running.
+
+```
+A=$(borg list --last 1 --short) && echo $A
+cd / && borg extract --progress ::$A home/nandan
 
 # keep the old /etc nearby, for Wi-Fi passwords and other secrets
-mkdir /root/old-etc && cd /root/old-etc && borg extract ::ARCHIVE etc
+mkdir /root/old-etc && cd /root/old-etc && borg extract ::$A etc
 cp -a /root/old-etc/etc/NetworkManager/system-connections/. /etc/NetworkManager/system-connections/
 ```
 

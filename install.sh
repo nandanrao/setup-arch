@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # README step 1: install a bare, encrypted Arch onto DISK.
-# Run from the Arch live USB, as root:
+# Run from the Arch live USB, as root (see README step 1):
 #
-#     bash /run/archiso/bootmnt/setup-arch/install.sh /dev/nvme0n1
+#     pacman -Sy git && git clone https://github.com/nandanrao/setup-arch
+#     bash setup-arch/install.sh /dev/nvme0n1
 #
 # Layout: 1G EFI partition + LUKS -> LVM (swap = 2x RAM, root = the rest).
 # Boots with EFISTUB (no bootloader): the kernel is started straight from a
