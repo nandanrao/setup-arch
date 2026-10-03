@@ -1,4 +1,4 @@
-# Fingerprint login. python-validity is for THIS laptop's Synaptics sensor (138a:0097);
+# Fingerprint login. python-validity is for THIS laptop's Synaptics sensor (06cb:009a);
 # a different laptop probably uses plain fprintd instead.
 
 AddPackage --foreign python-validity # Validity fingerprint sensor driver
