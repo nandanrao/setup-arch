@@ -174,6 +174,13 @@ reboot
   (before it downloads everything):
   `cd ~/Dropbox && xargs -a ~/Documents/setup-arch/dropbox-exclude.txt dropbox exclude add`
 - **VPNs**: `sudo tailscale up`, and log in to Mullvad.
+- **Bluetooth**: pairings live in `/var/lib`, which isn't backed up. Pair each
+  device again.
+- **Fingerprint**: same, `/var/lib`. `fprintd-enroll` to enroll a finger again.
+- **Keyring**: Chrome, Brave and Chromium keep saved passwords and cookies
+  encrypted in the login keyring, which opens with nandan's login password.
+  If you chose a different password at install, the first app to need it asks
+  for the **old** one.
 - **TeX Live**: installed by hand, see `tex.sh`.
 - **Node**: `~/.nvm` isn't backed up. `nvm install --lts`, then
   `npm install -g @marp-team/marp-cli typescript typescript-language-server`.
