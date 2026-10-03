@@ -168,9 +168,22 @@ reboot
   Once that succeeds, **turn off backups on the old laptop**:
   `sudo systemctl disable --now borg.timer borg-check.timer`.
   Remove the `borg_restore` key from BorgBase.
-- **Dropbox**: run `dropbox`, sign in, then exclude the folders right away
-  (before it downloads everything):
-  `cd ~/Dropbox && xargs -a ~/Documents/setup-arch/dropbox-exclude.txt dropbox exclude add`
+- **Dropbox**: it already runs at login (a systemd user service, restored with
+  home), so the sign-in link goes to its log rather than a terminal.
+  1. Get the link, open it in Firefox, sign in, click Connect. (No link yet? Wait a
+     few seconds and run the second line again.)
+     ```
+     systemctl --user start dropbox
+     journalctl --user -u dropbox | grep -o 'https://www.dropbox.com/cli_link_nonce[^ ]*' | tail -1
+     ```
+  2. Wait until `ls ~/Dropbox` shows the top-level folders. Dropbox creates those
+     first, and a folder can only be excluded once it exists.
+  3. Exclude the big folders straight away, so they don't download:
+     ```
+     cd ~/Dropbox && xargs -a ~/Documents/setup-arch/dropbox-exclude.txt dropbox-cli exclude add
+     dropbox-cli exclude list
+     ```
+  4. `dropbox-cli status` shows progress.
 - **VPNs**: `sudo tailscale up`, and log in to Mullvad.
 - **Bluetooth**: pairings live in `/var/lib`, which isn't backed up. Pair each
   device again.
