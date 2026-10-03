@@ -168,22 +168,20 @@ reboot
   Once that succeeds, **turn off backups on the old laptop**:
   `sudo systemctl disable --now borg.timer borg-check.timer`.
   Remove the `borg_restore` key from BorgBase.
-- **Dropbox**: it already runs at login (a systemd user service, restored with
-  home), so the sign-in link goes to its log rather than a terminal.
-  1. Get the link, open it in Firefox, sign in, click Connect. (No link yet? Wait a
-     few seconds and run the second line again.)
+- **Dropbox**: it starts by itself at login, but isn't signed in yet.
+  1. Run it in a terminal so you see the sign-in link (and any errors). Open the
+     link, sign in, click Connect. Then Ctrl+C and put it back in the background:
      ```
+     systemctl --user stop dropbox
+     dropbox
      systemctl --user start dropbox
-     journalctl --user -u dropbox | grep -o 'https://www.dropbox.com/cli_link_nonce[^ ]*' | tail -1
      ```
-  2. Wait until `ls ~/Dropbox` shows the top-level folders. Dropbox creates those
-     first, and a folder can only be excluded once it exists.
-  3. Exclude the big folders straight away, so they don't download:
+  2. Straight away, stop it downloading the big folders. Which folders this laptop
+     skips isn't in the backup, so it's kept in `dropbox-exclude.txt`:
      ```
-     cd ~/Dropbox && xargs -a ~/Documents/setup-arch/dropbox-exclude.txt dropbox-cli exclude add
-     dropbox-cli exclude list
+     ~/Documents/setup-arch/dropbox-excludes.sh apply
      ```
-  4. `dropbox-cli status` shows progress.
+     It waits for Dropbox to create each folder, then excludes it.
 - **VPNs**: `sudo tailscale up`, and log in to Mullvad.
 - **Bluetooth**: pairings live in `/var/lib`, which isn't backed up. Pair each
   device again.
@@ -222,6 +220,8 @@ Keep the old laptop untouched for a week or two.
   Run `acm save` first; if it makes a `99-unsorted.sh`, sort that first.
 - Once a week:
   - `acm save`. "configuration unchanged" means the config matches this laptop.
+  - `./dropbox-excludes.sh save`. Keeps `dropbox-exclude.txt` matching what this
+    laptop skips. Commit if it changed.
   - `./check-packages.sh`. Checks the config could still install a *new* laptop:
     AUR packages get renamed or removed, but stay installed here, so `acm save`
     never notices. If it lists any, find the replacement and update `aconfmgr/`.
