@@ -95,11 +95,8 @@ In BorgBase it takes **two** steps:
    select the new key under full or append-only access → Save.
    **Skipping this gives "Permission denied (publickey)".**
 
-`acm apply` in step 3 offers to remove these temporary packages again (cage,
-qrencode, wl-clipboard, and the openssh installed here), plus `paru-debug` and
-`rust` left over from building paru. That's expected; say yes. openssh
-should come back as a dependency of the desktop (gcr); check with `pacman -Q openssh`
-afterwards, because borg and git need it.
+`acm apply` in step 3 offers to remove some of the packages installed along the
+way (cage, paru's build leftovers, ...). That's expected; say yes.
 
 ### Restore
 
