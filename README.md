@@ -207,4 +207,8 @@ Keep the old laptop untouched for a week or two.
 - **Change a file in /etc**: `sudoedit /etc/...`, then `acm save`, commit.
 - **Only run `acm apply`** on a new machine, or after editing this repo by hand.
   Run `acm save` first; if it makes a `99-unsorted.sh`, sort that first.
-- Once a week: `acm save`. "configuration unchanged" means all is well.
+- Once a week:
+  - `acm save`. "configuration unchanged" means the config matches this laptop.
+  - `./check-packages.sh`. Checks the config could still install a *new* laptop:
+    AUR packages get renamed or removed, but stay installed here, so `acm save`
+    never notices. If it lists any, find the replacement and update `aconfmgr/`.

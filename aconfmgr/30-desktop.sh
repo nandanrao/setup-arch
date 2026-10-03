@@ -32,7 +32,7 @@ AddPackage xorg-xinput # Small commandline tool to configure devices
 AddPackage xorg-xrandr # Primitive command line interface to RandR extension
 AddPackage xorg-xwayland # run X clients under wayland
 AddPackage handlr-regex # Powerful alternative to xdg-utils (maintained fork of handlr)
-AddPackage --foreign nerd-fonts-complete # Iconic font aggregator, collection, & patcher. 3,600+ icons, 50+ patched fonts.
+AddPackage ttf-nerd-fonts-symbols # Nerd Font icons only, as a fallback for any font (replaces the removed nerd-fonts-complete)
 AddPackage --foreign sworkstyle # Swayest Workstyle - This tool will rename workspaces to the icons configured. Mainly meant for Sway WM
 CopyFile /etc/pulse/default.pa
 CreateLink /etc/systemd/system/bluetooth.target.wants/bluetooth.service /usr/lib/systemd/system/bluetooth.service
