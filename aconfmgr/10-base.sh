@@ -3,12 +3,10 @@
 AddPackage base # Minimal package set to define a basic Arch Linux installation
 AddPackage base-devel # Basic tools to build Arch Linux packages
 AddPackage efibootmgr # Linux user-space application to modify the EFI Boot Manager
-AddPackage intel-ucode # Microcode update files for Intel CPUs
 AddPackage iptables # Linux kernel packet control tool (using nft interface)
 AddPackage iwd # Internet Wireless Daemon
 AddPackage linux # The Linux kernel and modules
 AddPackage linux-firmware # Firmware files for Linux - Default set
-AddPackage linux-firmware-nvidia  # REVIEW: only needed if the laptop has an NVIDIA GPU
 AddPackage lvm2 # Logical Volume Manager 2 utilities
 AddPackage man-db # A utility for reading man pages
 AddPackage nano # Pico editor clone with enhancements
@@ -40,3 +38,10 @@ CreateLink /etc/systemd/system/sysinit.target.wants/systemd-timesyncd.service /u
 CreateLink /etc/systemd/system/timers.target.wants/paccache.timer /usr/lib/systemd/system/paccache.timer
 CopyFile /etc/vconsole.conf
 SetFileProperty / mode 555  # REVIEW: Arch default is 755; harmless either way
+
+# CPU microcode: whichever matches this machine's CPU (install.sh picks the same).
+if grep -q GenuineIntel /proc/cpuinfo; then
+	AddPackage intel-ucode # Microcode update files for Intel CPUs
+else
+	AddPackage amd-ucode # Microcode update image for AMD CPUs
+fi

@@ -51,7 +51,10 @@ mount --mkdir "$ESP" /mnt/boot
 swapon /dev/Group/swap
 
 ### Base system
-pacstrap -K /mnt base base-devel linux linux-firmware intel-ucode lvm2 \
+# Microcode for this machine's CPU (aconfmgr/10-base.sh picks the same way).
+if grep -q GenuineIntel /proc/cpuinfo; then UCODE=intel-ucode; else UCODE=amd-ucode; fi
+
+pacstrap -K /mnt base base-devel linux linux-firmware $UCODE lvm2 \
     networkmanager iwd efibootmgr sudo nano zsh git
 genfstab -U /mnt >> /mnt/etc/fstab
 
@@ -71,7 +74,7 @@ sed -i 's/^HOOKS=.*/HOOKS=(base udev autodetect keyboard keymap consolefont modc
 mkinitcpio -P
 
 efibootmgr --create --disk $DISK --part 1 --label "Arch Linux" --loader '\vmlinuz-linux' \
-  --unicode 'cryptdevice=UUID=$UUID:root:allow-discards root=/dev/Group/root resume=/dev/Group/swap rw initrd=\intel-ucode.img initrd=\initramfs-linux.img'
+  --unicode 'cryptdevice=UUID=$UUID:root:allow-discards root=/dev/Group/root resume=/dev/Group/swap rw initrd=\\${UCODE}.img initrd=\initramfs-linux.img'
 
 useradd -m -G wheel -s /bin/zsh nandan
 sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers

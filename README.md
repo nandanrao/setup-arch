@@ -137,27 +137,8 @@ cd /tmp/paru && makepkg -si
 paru -S aconfmgr-git
 ```
 
-Two hardware checks before applying. The config was made on a T480s, and two
-parts of it only fit that kind of hardware. `lsusb` and `lspci` aren't installed
-yet, so install them first:
-
-```
-sudo pacman -S usbutils pciutils
-```
-
-- **Fingerprint reader.** `aconfmgr/26-fingerprint.sh` installs `python-validity`,
-  a driver for a few older Synaptics/Validity sensors (the T480s has `06cb:009a`).
-  ```
-  lsusb | grep -iE '06cb:009a|138a:00(90|97|9d)'
-  ```
-  - Prints a line: same kind of sensor. Leave the file alone.
-  - Prints nothing, but `lsusb | grep -i finger` shows a reader: newer sensors
-    work with plain `fprintd`. In `26-fingerprint.sh`, change
-    `AddPackage --foreign python-validity` to `AddPackage fprintd` and delete the
-    four `CreateLink` lines (a suspend fix that only python-validity needs).
-  - No fingerprint reader at all: delete `26-fingerprint.sh`.
-- **NVIDIA GPU.** If `lspci | grep -i nvidia` prints nothing, delete the
-  `linux-firmware-nvidia` line in `aconfmgr/10-base.sh`.
+The config adapts to the hardware by itself: the CPU microcode (Intel or AMD) and
+the fingerprint driver are chosen from what this laptop has.
 
 ```
 acm apply
