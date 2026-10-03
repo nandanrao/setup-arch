@@ -31,7 +31,7 @@ AddPackage xorg-xev # Print contents of X events
 AddPackage xorg-xinput # Small commandline tool to configure devices
 AddPackage xorg-xrandr # Primitive command line interface to RandR extension
 AddPackage xorg-xwayland # run X clients under wayland
-AddPackage --foreign handlr-bin # Powerful alternative to xdg-utils written in Rust
+AddPackage handlr-regex # Powerful alternative to xdg-utils (maintained fork of handlr)
 AddPackage --foreign nerd-fonts-complete # Iconic font aggregator, collection, & patcher. 3,600+ icons, 50+ patched fonts.
 AddPackage --foreign sworkstyle # Swayest Workstyle - This tool will rename workspaces to the icons configured. Mainly meant for Sway WM
 CopyFile /etc/pulse/default.pa

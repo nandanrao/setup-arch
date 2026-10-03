@@ -24,13 +24,12 @@ AddPackage --foreign dropbox # A free service that lets you bring your photos, d
 AddPackage --foreign dropbox-cli # Command line interface for Dropbox
 AddPackage --foreign emacs-lsp-booster # Emacs LSP performance booster
 AddPackage --foreign google-chrome # The popular web browser by Google (Stable Channel)
-AddPackage --foreign jazz-midi-plugin-bin # Jazz-Midi Plugin (support for midi in web browsers)
 AddPackage --foreign lector # Qt based ebook reader with support for PDF, epub, fb2, comicbooks, mobi, azw
 AddPackage --foreign mendeleydesktop-bundled  # legacy Mendeley Desktop; still in use (2026-09). Discontinued upstream, may stop working.
 AddPackage --foreign nomacs # A Qt image viewer
 AddPackage --foreign piper-tts-bin # A fast, local neural text to speech system
 AddPackage --foreign slack-desktop # Slack Desktop (Beta) for Linux
 AddPackage --foreign spotify # A proprietary music streaming service
-AddPackage --foreign whisper.cpp # Port of OpenAI's Whisper model in C/C++
+AddPackage whisper-cpp # Port of OpenAI's Whisper model in C/C++
 AddPackage --foreign zoom # Video Conferencing and Web Conferencing Service
 CopyFile /usr/local/bin/emacsclient-terminal 755
