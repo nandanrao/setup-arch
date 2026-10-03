@@ -174,7 +174,9 @@ reboot
 - **VPNs**: `sudo tailscale up`, and log in to Mullvad.
 - **Bluetooth**: pairings live in `/var/lib`, which isn't backed up. Pair each
   device again.
-- **Fingerprint**: same, `/var/lib`. `fprintd-enroll` to enroll a finger again.
+- **Fingerprint**: same, `/var/lib`. Enroll a finger again with
+  `sudo fprintd-enroll nandan` (without sudo it says "not authorized"; without
+  `nandan` it enrolls for root), then test with `fprintd-verify`.
 - **Keyring**: Chrome, Brave and Chromium keep saved passwords and cookies
   encrypted in the login keyring, which opens with nandan's login password.
   If you chose a different password at install, the first app to need it asks
